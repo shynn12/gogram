@@ -30,7 +30,7 @@ func TestMain(m *testing.M) {
 
 func Test_db_CreateUser(t *testing.T) {
 	u := &models.UserDTO{
-		Email:             "123@123",
+		Email:             "123@12223",
 		EncryptedPassword: "131EWDSAD1E21ASD",
 	}
 	id, err := TestDB.CreateUser(context.Background(), u)
@@ -38,7 +38,7 @@ func Test_db_CreateUser(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	u1, err := TestDB.FindByEmail(context.Background(), "123@123")
+	u1, err := TestDB.FindByEmail(context.Background(), "123@12223")
 
 	if err != nil {
 		t.Error(err)

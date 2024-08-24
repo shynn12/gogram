@@ -32,8 +32,8 @@ func New(router *mux.Router, config *Config) *api {
 func (api *api) Handle() {
 	api.r.HandleFunc("/api/hello", api.handleHello)
 	api.r.HandleFunc("/api/sign-in", api.SingIn).Methods(http.MethodPost)
-	// api.r.HandleFunc("/api/LogIn", api.LogIn)
-	// api.r.HandleFunc("/api/NewChat", api.NewChat)
+	// api.r.HandleFunc("/api/log-in", api.LogIn)
+	// api.r.HandleFunc("/api/new-chat", api.NewChat)
 	// api.r.HandleFunc("/api/OpenChat", api.Open)
 	// api.r.HandleFunc("/api/SendMessage", api.SendMassage)
 }

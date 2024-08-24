@@ -23,5 +23,15 @@ type Message struct {
 type MessageDTO struct {
 	UserID int       `json:"user_id"`
 	Body   string    `json:"body"`
+	ChatID int       `json:"chat_id"`
 	Time   time.Time `json:"time"`
+}
+
+type Chat struct {
+	Name string `json:"chat_name"`
+}
+
+type ChatDTO struct {
+	ID   int    `json:"chat_id"`
+	Name string `json:"chat_name"`
 }
