@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"log"
+	"slices"
 	"testing"
 
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -28,7 +29,7 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
-func Test_db_CreateUser(t *testing.T) {
+func Test_db_User(t *testing.T) {
 	u := &models.UserDTO{
 		Email:             "123@12223",
 		EncryptedPassword: "131EWDSAD1E21ASD",
@@ -59,5 +60,32 @@ func Test_db_CreateUser(t *testing.T) {
 	}
 	if id != u1.ID {
 		t.Errorf("DeleteUser() = %v, want %v", u1.ID, id)
+	}
+}
+
+func Test_db_Chat(t *testing.T) {
+	_, _ = TestDB.CreateUser(context.Background(), &models.UserDTO{Email: "d@d", EncryptedPassword: "123321"})
+	_, _ = TestDB.CreateUser(context.Background(), &models.UserDTO{Email: "e@e", EncryptedPassword: "123321"})
+	u, _ := TestDB.FindByEmail(context.Background(), "d@d")
+	u2, _ := TestDB.FindByEmail(context.Background(), "e@e")
+
+	_, err := TestDB.CreateChat(context.Background(), []*models.User{u, u2})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	c1, err := TestDB.GetAllChats(context.Background(), u)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c2, err := TestDB.GetAllChats(context.Background(), u2)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log(c1, c2)
+
+	if slices.Equal(c1, c2) {
+		t.Fatal("chats of two users are not equal")
 	}
 }

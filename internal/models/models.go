@@ -28,10 +28,10 @@ type MessageDTO struct {
 }
 
 type Chat struct {
+	ID   int    `json:"chat_id"`
 	Name string `json:"chat_name"`
 }
 
 type ChatDTO struct {
-	ID   int    `json:"chat_id"`
 	Name string `json:"chat_name"`
 }

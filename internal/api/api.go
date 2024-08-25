@@ -32,10 +32,10 @@ func New(router *mux.Router, config *Config) *api {
 func (api *api) Handle() {
 	api.r.HandleFunc("/api/hello", api.handleHello)
 	api.r.HandleFunc("/api/sign-in", api.SingIn).Methods(http.MethodPost)
-	// api.r.HandleFunc("/api/log-in", api.LogIn)
-	// api.r.HandleFunc("/api/new-chat", api.NewChat)
-	// api.r.HandleFunc("/api/OpenChat", api.Open)
-	// api.r.HandleFunc("/api/SendMessage", api.SendMassage)
+	api.r.HandleFunc("/api/log-in", api.LogIn)
+	api.r.HandleFunc("/api/new-chat", api.NewChat).Methods(http.MethodPost)
+	// api.r.HandleFunc("/api/all-chats/{chat_id}", api.GetAllChats)
+	// api.r.HandleFunc("/api/send-message?{chat_id}", api.SendMassage)
 }
 
 func (api *api) handleHello(w http.ResponseWriter, r *http.Request) {
@@ -57,6 +57,33 @@ func (api *api) SingIn(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte(fmt.Sprintf("Successfully created user with id %d", id)))
+}
+
+func (api *api) LogIn(w http.ResponseWriter, r *http.Request) {
+	var gotU = &models.UserDTO{}
+
+	utils.ParseBody(r, gotU)
+
+	u, err := api.db.FindByEmail(context.Background(), gotU.Email)
+	if err != nil {
+		api.logger.Errorf("cannot find user due to error: %v", err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(fmt.Sprintf("There is no user with email %s", u.Email)))
+		return
+	}
+
+	if u.EncryptedPassword != gotU.EncryptedPassword {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(fmt.Sprintf("Wrong password")))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(fmt.Sprintf("Hello %s", u.Email)))
+}
+
+func (api *api) NewChat(w http.ResponseWriter, r *http.Request) {
+
 }
 
 func (api *api) Start() error {

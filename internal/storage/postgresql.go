@@ -87,7 +87,7 @@ func (d *db) CreateChat(ctx context.Context, u []*models.User) (id int, err erro
 	if len(u) < 2 {
 		return 0, fmt.Errorf("cant create chat with less than 2 users")
 	}
-	tx, err := d.pool.BeginTx(ctx, pgx.TxOptions{})
+	tx, err := d.pool.Begin(ctx)
 	defer tx.Rollback(ctx)
 
 	if err != nil {
@@ -108,13 +108,13 @@ func (d *db) CreateChat(ctx context.Context, u []*models.User) (id int, err erro
 	if err != nil {
 		return 0, err
 	}
-
 	tx.Commit(ctx)
 
 	return id, nil
 }
 
-func (d *db) GetAllChats(ctx context.Context, u *models.User) (chats []*models.ChatDTO, err error) {
+func (d *db) GetAllChats(ctx context.Context, u *models.User) ([]*models.Chat, error) {
+	chats := []*models.Chat{}
 	tx, err := d.pool.BeginTx(ctx, pgx.TxOptions{})
 	defer tx.Rollback(ctx)
 
@@ -126,21 +126,26 @@ func (d *db) GetAllChats(ctx context.Context, u *models.User) (chats []*models.C
 	if err != nil {
 		return chats, err
 	}
-	chat := &models.ChatDTO{}
+	chat := &models.Chat{}
 	var chatId int
+	chatsID := []int{}
 	for rows.Next() {
 		err = rows.Scan(&chatId)
 		if err != nil {
 			return nil, err
 		}
-		err = tx.QueryRow(ctx, "Select id, name from chats where id = $1", chatId).Scan(&chat.ID, &chat.Name)
+		chatsID = append(chatsID, chatId)
+	}
+	rows.Close()
+
+	for _, v := range chatsID {
+		err = tx.QueryRow(ctx, "Select id, name from chats where id = $1", v).Scan(&chat.ID, &chat.Name)
 		if err != nil {
 			return nil, err
 		}
 
 		chats = append(chats, chat)
 	}
-
 	tx.Commit(ctx)
 	return chats, err
 }
@@ -163,7 +168,7 @@ func (d *db) CreateMessage(ctx context.Context, msg *models.MessageDTO) (id int,
 	return id, err
 }
 
-func (d *db) GetAllMessages(ctx context.Context, u *models.ChatDTO) (id int, err error) {
+func (d *db) GetAllMessages(ctx context.Context, c *models.Chat) (id int, err error) {
 	return id, err
 }
 
