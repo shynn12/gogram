@@ -14,10 +14,10 @@ type UserDTO struct {
 }
 
 type Message struct {
-	MessageID int       `json:"message_id"`
-	UserID    int       `json:"user_id"`
-	Body      string    `json:"body"`
-	Time      time.Time `json:"time"`
+	ID     int       `json:"message_id"`
+	UserID int       `json:"user_id"`
+	Body   string    `json:"body"`
+	Time   time.Time `json:"time"`
 }
 
 type MessageDTO struct {

@@ -113,7 +113,7 @@ func (d *db) CreateChat(ctx context.Context, u []*models.User) (id int, err erro
 	return id, nil
 }
 
-func (d *db) GetAllChats(ctx context.Context, u *models.User) ([]*models.Chat, error) {
+func (d *db) GetAllChats(ctx context.Context, uid int) ([]*models.Chat, error) {
 	chats := []*models.Chat{}
 	tx, err := d.pool.BeginTx(ctx, pgx.TxOptions{})
 	defer tx.Rollback(ctx)
@@ -122,7 +122,7 @@ func (d *db) GetAllChats(ctx context.Context, u *models.User) ([]*models.Chat, e
 		return chats, err
 	}
 
-	rows, err := tx.Query(ctx, "Select chat_id from party where user_id = $1", u.ID)
+	rows, err := tx.Query(ctx, "Select chat_id from party where user_id = $1", uid)
 	if err != nil {
 		return chats, err
 	}
@@ -151,14 +151,14 @@ func (d *db) GetAllChats(ctx context.Context, u *models.User) ([]*models.Chat, e
 }
 
 func (d *db) CreateMessage(ctx context.Context, msg *models.MessageDTO) (id int, err error) {
-	tx, err := d.pool.BeginTx(ctx, pgx.TxOptions{})
+	tx, err := d.pool.Begin(ctx)
 	defer tx.Rollback(ctx)
 
 	if err != nil {
 		return 0, err
 	}
 
-	err = tx.QueryRow(ctx, "Insert into messages (user_id, body, chat_id, time) VALUES ($1, $2, $3, $4) Returning message_id", msg.UserID, msg.Body, msg.ChatID, msg.Time).Scan(&id)
+	err = tx.QueryRow(ctx, "Insert into messages (user_id, body, chat_id, time) VALUES ($1, $2, $3, $4) Returning id", msg.UserID, msg.Body, msg.ChatID, msg.Time).Scan(&id)
 	if err != nil {
 		return 0, err
 	}
@@ -168,8 +168,32 @@ func (d *db) CreateMessage(ctx context.Context, msg *models.MessageDTO) (id int,
 	return id, err
 }
 
-func (d *db) GetAllMessages(ctx context.Context, c *models.Chat) (id int, err error) {
-	return id, err
+func (d *db) GetAllMessages(ctx context.Context, cid int) ([]*models.Message, error) {
+	msgs := []*models.Message{}
+	tx, err := d.pool.Begin(ctx)
+	defer tx.Rollback(ctx)
+
+	if err != nil {
+		return msgs, err
+	}
+
+	rows, err := tx.Query(ctx, "Select id, user_id, body, time from messages where chat_id = $1", cid)
+	if err != nil {
+		return msgs, err
+	}
+
+	msg := &models.Message{}
+	for rows.Next() {
+		err = rows.Scan(msg)
+		if err != nil {
+			return nil, err
+		}
+		msgs = append(msgs, msg)
+	}
+	rows.Close()
+
+	tx.Commit(ctx)
+	return msgs, err
 }
 
 func New(pool *pgxpool.Pool) Storage {

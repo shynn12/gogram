@@ -74,11 +74,11 @@ func Test_db_Chat(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	c1, err := TestDB.GetAllChats(context.Background(), u)
+	c1, err := TestDB.GetAllChats(context.Background(), u.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	c2, err := TestDB.GetAllChats(context.Background(), u2)
+	c2, err := TestDB.GetAllChats(context.Background(), u2.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
