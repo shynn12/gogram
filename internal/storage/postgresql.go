@@ -184,7 +184,7 @@ func (d *db) GetAllMessages(ctx context.Context, cid int) ([]*models.Message, er
 
 	msg := &models.Message{}
 	for rows.Next() {
-		err = rows.Scan(msg)
+		err = rows.Scan(&msg.ID, &msg.UserID, &msg.Body, &msg.Time)
 		if err != nil {
 			return nil, err
 		}

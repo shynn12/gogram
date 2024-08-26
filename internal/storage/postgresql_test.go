@@ -5,6 +5,7 @@ import (
 	"log"
 	"slices"
 	"testing"
+	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/shynn2/cmd-gram/internal/models"
@@ -88,4 +89,32 @@ func Test_db_Chat(t *testing.T) {
 	if slices.Equal(c1, c2) {
 		t.Fatal("chats of two users are not equal")
 	}
+}
+
+func Test_db_Message(t *testing.T) {
+	_, _ = TestDB.CreateUser(context.Background(), &models.UserDTO{Email: "d@d", EncryptedPassword: "123321"})
+	_, _ = TestDB.CreateUser(context.Background(), &models.UserDTO{Email: "e@e", EncryptedPassword: "123321"})
+	u, _ := TestDB.FindByEmail(context.Background(), "d@d")
+	u2, _ := TestDB.FindByEmail(context.Background(), "e@e")
+
+	cid, err := TestDB.CreateChat(context.Background(), []*models.User{u, u2})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	id, err := TestDB.CreateMessage(context.Background(), &models.MessageDTO{UserID: u.ID, Body: "hello", ChatID: cid, Time: time.Now()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	msgs, err := TestDB.GetAllMessages(context.Background(), cid)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(msgs)
+	for _, v := range msgs {
+		if v.ID == id {
+			return
+		}
+	}
+	t.Errorf("no message witj id: %d", id)
 }
