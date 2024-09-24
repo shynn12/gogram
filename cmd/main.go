@@ -14,7 +14,7 @@ var (
 )
 
 func init() {
-	flag.StringVar(&configPath, "config-path", "pkg/client/postgresql/api.toml", "path to config file")
+	flag.StringVar(&configPath, "config-path", "c:/Users/daji2/go/src/cmd-gram/pkg/client/postgresql/api.toml", "path to config file")
 }
 
 func main() {

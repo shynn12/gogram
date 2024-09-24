@@ -5,12 +5,16 @@ import "time"
 type User struct {
 	ID                int    `json:"id"`
 	Email             string `json:"email"`
-	EncryptedPassword string `json:"encrypted_password"`
+	EncryptedPassword string `json:"encrypted_password,omitempty"`
 }
 
 type UserDTO struct {
 	Email             string `json:"email"`
-	EncryptedPassword string `json:"encrypted_password"`
+	EncryptedPassword string `json:"encrypted_password,omitempty"`
+}
+
+type Messages struct {
+	Msgs []Message `json:"messages"`
 }
 
 type Message struct {
@@ -32,6 +36,14 @@ type Chat struct {
 	Name string `json:"chat_name"`
 }
 
+type Chats struct {
+	Chats []Chat `json:"chat"`
+}
+
 type ChatDTO struct {
 	Name string `json:"chat_name"`
+}
+
+type Error struct {
+	Text string `json:"err_text"`
 }

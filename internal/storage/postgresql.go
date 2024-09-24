@@ -3,6 +3,8 @@ package storage
 import (
 	"context"
 	"fmt"
+	"log"
+	"sync"
 
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -11,12 +13,14 @@ import (
 
 type db struct {
 	pool *pgxpool.Pool
+	sync.Mutex
 }
 
 func (d *db) CreateUser(ctx context.Context, u *models.UserDTO) (id int, err error) {
+	d.Lock()
+	defer d.Unlock()
 	tx, err := d.pool.BeginTx(ctx, pgx.TxOptions{})
 	defer tx.Rollback(ctx)
-
 	if err != nil {
 		return 0, err
 	}
@@ -38,6 +42,8 @@ func (d *db) CreateUser(ctx context.Context, u *models.UserDTO) (id int, err err
 }
 
 func (d *db) DeleteUser(ctx context.Context, u *models.User) (id int, err error) {
+	d.Lock()
+	defer d.Unlock()
 	tx, err := d.pool.BeginTx(ctx, pgx.TxOptions{})
 	defer tx.Rollback(ctx)
 
@@ -63,13 +69,13 @@ func (d *db) DeleteUser(ctx context.Context, u *models.User) (id int, err error)
 func (d *db) FindByEmail(ctx context.Context, email string) (*models.User, error) {
 	u := &models.User{}
 
-	tx, err := d.pool.BeginTx(ctx, pgx.TxOptions{})
+	tx, err := d.pool.Begin(ctx)
 	defer tx.Rollback(ctx)
 
 	if err != nil {
 		return nil, err
 	}
-
+	log.Println(email)
 	err = tx.QueryRow(ctx, "Select id, email, encrypted_password from users where email = $1", email).Scan(
 		&u.ID,
 		&u.Email,
@@ -84,6 +90,8 @@ func (d *db) FindByEmail(ctx context.Context, email string) (*models.User, error
 }
 
 func (d *db) CreateChat(ctx context.Context, u []*models.User) (id int, err error) {
+	d.Lock()
+	defer d.Unlock()
 	if len(u) < 2 {
 		return 0, fmt.Errorf("cant create chat with less than 2 users")
 	}
@@ -113,8 +121,8 @@ func (d *db) CreateChat(ctx context.Context, u []*models.User) (id int, err erro
 	return id, nil
 }
 
-func (d *db) GetAllChats(ctx context.Context, uid int) ([]*models.Chat, error) {
-	chats := []*models.Chat{}
+func (d *db) GetAllChats(ctx context.Context, uid int) (*models.Chats, error) {
+	chats := &models.Chats{}
 	tx, err := d.pool.BeginTx(ctx, pgx.TxOptions{})
 	defer tx.Rollback(ctx)
 
@@ -126,7 +134,7 @@ func (d *db) GetAllChats(ctx context.Context, uid int) ([]*models.Chat, error) {
 	if err != nil {
 		return chats, err
 	}
-	chat := &models.Chat{}
+	chat := models.Chat{}
 	var chatId int
 	chatsID := []int{}
 	for rows.Next() {
@@ -144,13 +152,15 @@ func (d *db) GetAllChats(ctx context.Context, uid int) ([]*models.Chat, error) {
 			return nil, err
 		}
 
-		chats = append(chats, chat)
+		chats.Chats = append(chats.Chats, chat)
 	}
 	tx.Commit(ctx)
 	return chats, err
 }
 
 func (d *db) CreateMessage(ctx context.Context, msg *models.MessageDTO) (id int, err error) {
+	d.Lock()
+	defer d.Unlock()
 	tx, err := d.pool.Begin(ctx)
 	defer tx.Rollback(ctx)
 
@@ -168,8 +178,8 @@ func (d *db) CreateMessage(ctx context.Context, msg *models.MessageDTO) (id int,
 	return id, err
 }
 
-func (d *db) GetAllMessages(ctx context.Context, cid int) ([]*models.Message, error) {
-	msgs := []*models.Message{}
+func (d *db) GetAllMessages(ctx context.Context, cid int) ([]models.Message, error) {
+	msgs := []models.Message{}
 	tx, err := d.pool.Begin(ctx)
 	defer tx.Rollback(ctx)
 
@@ -182,8 +192,8 @@ func (d *db) GetAllMessages(ctx context.Context, cid int) ([]*models.Message, er
 		return msgs, err
 	}
 
-	msg := &models.Message{}
 	for rows.Next() {
+		msg := models.Message{}
 		err = rows.Scan(&msg.ID, &msg.UserID, &msg.Body, &msg.Time)
 		if err != nil {
 			return nil, err
